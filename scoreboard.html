@@ -1,0 +1,238 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Scoreboard</title>
+    <style>
+        body {
+            font-family: 'Comic Sans MS', cursive, sans-serif;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            height: 100vh;
+            margin: 0;
+            background-color: #f8e8f5;
+            color: #6a1b9a;
+        }
+        h1 {
+            color: #8e24aa;
+            font-size: 3rem;
+            margin-bottom: 20px;
+        }
+        .score-table {
+            border-collapse: collapse;
+            margin-top: 20px;
+        }
+        .score-table th, .score-table td {
+            border: 1px solid #d1c4e9;
+            padding: 8px 20px;
+            text-align: center;
+        }
+        .score-table th {
+            background-color: #f3e5f5;
+        }
+        .score-table tr:nth-child(even) {
+            background-color: #f8bbd0;
+        }
+        .back-button {
+            background-color: #f8bbd0;
+            color: #6a1b9a;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .back-button:hover {
+            background-color: #f48fb1;
+        }
+        .clear-button {
+            background-color: #f48fb1;
+            color: #fff;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+            transition: background-color 0.3s;
+        }
+        .clear-button:hover {
+            background-color: #f06292;
+        }
+        .confirm-container {
+            display: none;
+            flex-direction: column;
+            align-items: center;
+            margin-top: 20px;
+        }
+        .confirm-container button {
+            background-color: #f8bbd0;
+            color: #6a1b9a;
+            border: none;
+            padding: 10px 20px;
+            margin: 10px;
+            border-radius: 20px;
+            font-size: 1.2rem;
+            cursor: pointer;
+        }
+        .confirm-container button:hover {
+            background-color: #f48fb1;
+        }
+    </style>
+</head>
+<body>
+
+    <h1>Scoreboard</h1>
+
+    <table class="score-table">
+        <thead>
+            <tr>
+                <th>Date & Time</th>
+                <th>Correct</th>
+                <th>Incorrect</th>
+                <th>Accuracy (%)</th>
+            </tr>
+        </thead>
+        <tbody id="score-list">
+            <!-- Scores will be inserted here -->
+        </tbody>
+    </table>
+
+    <button class="back-button" onclick="window.location.href='index.html'">Back to Game</button>
+    
+    <button class="clear-button" onclick="confirmClearBoard()">Clear Board</button>
+
+    <div class="confirm-container" id="confirm-container">
+        <p>Are you sure you want to clear the board?</p>
+        <button onclick="clearBoard()">Yes, Clear</button>
+        <button onclick="cancelClear()">No, Keep</button>
+    </div>
+
+    <script>
+        // Function to load and display the scores
+         const vocabList = ["apple", "banana", "cherry", "date", "elderberry", "fig", "grape", "honeydew", "kiwi", "lemon", "mango", "nectarine", "orange", "papaya", "quince"];
+        let selectedVocab = [];
+        let correctCount = 0;
+        let incorrectCount = 0;
+        let currentWordIndex = 0;
+        let countdown;
+        let countdownActive = false;
+
+        function setVocabCount(count) {
+            selectedVocab = vocabList.sort(() => Math.random() - 0.5).slice(0, count);
+            document.getElementById('game-area').style.display = 'block';
+            document.getElementById('score-display').innerHTML = '';
+            document.getElementById('selection-buttons').style.display = 'none';
+            correctCount = 0;
+            incorrectCount = 0;
+            currentWordIndex = 0;
+
+            document.getElementById('vocab-display').style.display = 'block';
+            document.getElementById('timer-display').style.display = 'block';
+            document.getElementById('start-timer').style.display = 'block';
+            document.getElementById('skip-button').style.display = 'none';
+            document.getElementById('feedback-buttons').style.display = 'none';
+
+            showNextWord();
+        }
+
+        function showNextWord() {
+            if (currentWordIndex < selectedVocab.length) {
+                document.getElementById('vocab-display').innerText = selectedVocab[currentWordIndex];
+                updateProgress(); // Update progress counter
+                document.getElementById('feedback-buttons').style.display = 'none';
+                document.getElementById('start-timer').style.display = 'block';
+                document.getElementById('skip-button').style.display = 'none';
+            } else {
+                endGame();
+            }
+        }
+
+        function updateProgress() {
+            // Display how many words have been completed
+            document.getElementById('progress-display').innerText = `Words Completed: ${currentWordIndex + 1} / ${selectedVocab.length}`;
+        }
+
+        function startCountdown() {
+            let timeLeft = 10;
+            document.getElementById('start-timer').style.display = 'none';
+            document.getElementById('skip-button').style.display = 'block';
+            document.getElementById('timer-display').innerText = `Time Left: ${timeLeft}s`;
+            countdownActive = true;
+            countdown = setInterval(() => {
+                timeLeft--;
+                document.getElementById('timer-display').innerText = `Time Left: ${timeLeft}s`;
+                if (timeLeft <= 0) {
+                    clearInterval(countdown);
+                    playBeep();
+                    document.getElementById('feedback-buttons').style.display = 'block';
+                    countdownActive = false;
+                }
+            }, 1000);
+        }
+
+        function skipCountdown() {
+            if (countdownActive) {
+                clearInterval(countdown);
+                countdownActive = false;
+                document.getElementById('feedback-buttons').style.display = 'block';
+                document.getElementById('skip-button').style.display = 'none';
+            }
+        }
+
+        function playBeep() {
+            const beep = new Audio('Eye Wink.mp3');
+            beep.play();
+        }
+
+        function recordFeedback(isCorrect) {
+            if (isCorrect) {
+                correctCount++;
+            } else {
+                incorrectCount++;
+            }
+            currentWordIndex++;
+            showNextWord();
+        }
+
+        function endGame() {
+            document.getElementById('vocab-display').style.display = 'none';
+            document.getElementById('timer-display').style.display = 'none';
+            document.getElementById('feedback-buttons').style.display = 'none';
+            document.getElementById('skip-button').style.display = 'none';
+
+            const total = correctCount + incorrectCount;
+            const accuracy = (correctCount / total * 100).toFixed(2);
+            document.getElementById('score-display').innerHTML = `
+                Game Over!<br>
+                Correct: ${correctCount}<br>
+                Incorrect: ${incorrectCount}<br>
+                Accuracy: ${accuracy}%
+            `;
+            document.getElementById('selection-buttons').style.display = 'block';
+
+            let scores = JSON.parse(localStorage.getItem('scoreboard')) || [];
+            scores.push({
+                correct: correctCount,
+                incorrect: incorrectCount,
+                accuracy: ((correctCount / (correctCount + incorrectCount)) * 100).toFixed(2),
+                date: new Date().toISOString()
+            });
+            localStorage.setItem('scoreboard', JSON.stringify(scores));
+        }
+
+        function viewScoreboard() {
+            window.location.href = "scoreboard.html";
+        }
+
+        document.addEventListener('keydown', (event) => {
+            if (event.key === 'Enter' && document.getElementById('start-timer').style.display !== 'none') {
+                startCountdown();    </script>
+
+</body>
+</html>
